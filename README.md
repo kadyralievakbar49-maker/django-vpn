@@ -69,3 +69,17 @@ python manage.py runserver 127.0.0.1:8000
 - Состояние **не сохраняется в БД**: `views.py` читает живой интерфейс при каждом запросе, поэтому `vpn` из терминала и кнопка на сайте всегда синхронны.
 - `/status/` отдаёт JSON, JS на странице опрашивает его раз в 10 секунд.
 - Внешний IP берётся через `urllib` (ipify → ifconfig.me → icanhazip).
+
+---
+
+## Демо-версия на Vercel
+
+Репозиторий: https://github.com/kadyralievakbar49-maker/django-vpn
+
+Vercel: Import Git Repository → `django-vpn` → Deploy. Django определяется
+автоматически (есть manage.py), statics собираются через collectstatic.
+
+Внимание: на Vercel нет root, интерфейса `wg0` и `/etc/wireguard`, поэтому
+реальное управление VPN там невозможно. При `VERCEL=1` автоматически включается
+демо-режим: кнопка меняет состояние через cookie, на странице есть бейдж
+«ДЕМО-РЕЖИМ». Локальная версия управляет настоящим `wg0`.
