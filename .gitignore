@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Django
+db.sqlite3
+staticfiles/
+
+# Vercel build
+.vercel/
+
+# Локальные секреты и системные файлы — в репозиторий не кладём
+.env
+.env.*
+demo-wg0.conf
+sudoers.d-vpn-panel

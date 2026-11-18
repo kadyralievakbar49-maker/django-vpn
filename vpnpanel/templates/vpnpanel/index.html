@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VPN Control · django-vpn</title>
+  <link rel="stylesheet" href="{% static 'vpnpanel/style.css' %}">
+</head>
+<body>
+  <main class="card">
+    <header>
+      <span class="eyebrow">WireGuard · {{ iface }}</span>
+      <h1>Управление VPN</h1>
+      {% if demo %}<div class="demo-badge">ДЕМО-РЕЖИМ · Vercel</div>{% endif %}
+    </header>
+
+    <section class="status-block" id="status-block"
+             data-state="{% if status %}on{% else %}off{% endif %}">
+      <div class="status-row">
+        <span class="dot"></span>
+        <span class="status-text" id="status-text">
+          {% if status %}Включён{% else %}Выключен{% endif %}
+        </span>
+      </div>
+      <div class="ip-row">
+        <span class="ip-label">Внешний IP</span>
+        <code id="ip-value">{{ ip }}</code>
+      </div>
+    </section>
+
+    {% if not config_exists %}
+      <div class="warn" id="config-warning">
+        ⚠ Конфиг <code>{{ config_path }}</code> не найден.
+        Поместите туда профиль ProtonVPN перед включением.
+      </div>
+    {% endif %}
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="msg {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <form method="post" action="{% url 'vpnpanel:toggle' %}">
+      {% csrf_token %}
+      <button class="power-btn" type="submit">
+        <span class="power-icon">⏻</span>
+        <span>{% if status %}Выключить VPN{% else %}Включить VPN{% endif %}</span>
+      </button>
+    </form>
+
+    <p class="hint">То же самое из терминала: <code>vpn</code></p>
+  </main>
+
+  <script>
+    const block  = document.getElementById('status-block');
+    const text   = document.getElementById('status-text');
+    const ipEl   = document.getElementById('ip-value');
+    const btnLbl = document.querySelector('.power-btn span:last-child');
+    const warn   = document.getElementById('config-warning');
+
+    async function refresh() {
+      try {
+        const r = await fetch("{% url 'vpnpanel:status' %}", {
+          headers: {'X-Requested-With': 'fetch'}
+        });
+        const d = await r.json();
+        block.dataset.state = d.running ? 'on' : 'off';
+        text.textContent    = d.running ? 'Включён' : 'Выключен';
+        ipEl.textContent    = d.ip;
+        btnLbl.textContent  = d.running ? 'Выключить VPN' : 'Включить VPN';
+        if (warn && d.config_exists) warn.remove();
+      } catch (e) {
+        // сеть недоступна — оставляем последнее известное состояние
+      }
+    }
+    setInterval(refresh, 10000);
+  </script>
+</body>
+</html>

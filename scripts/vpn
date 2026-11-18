@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Глобальная команда: `vpn` переключает состояние, `vpn status` показывает его.
+set -euo pipefail
+
+IFACE="wg0"
+SUDO="/usr/bin/sudo"
+WG="/usr/bin/wg"
+WG_QUICK="/usr/bin/wg-quick"
+
+is_up() {
+  "$SUDO" -n "$WG" show "$IFACE" >/dev/null 2>&1
+}
+
+case "${1:-toggle}" in
+  on)
+    if is_up; then echo "VPN уже включён"; exit 0; fi
+    echo "🚀 Включаю VPN ($IFACE)..."
+    "$SUDO" -n "$WG_QUICK" up "$IFACE"
+    echo "✅ VPN включён"
+    ;;
+  off)
+    if ! is_up; then echo "VPN уже выключен"; exit 0; fi
+    echo "⏹  Отключаю VPN ($IFACE)..."
+    "$SUDO" -n "$WG_QUICK" down "$IFACE"
+    echo "✅ VPN выключен"
+    ;;
+  status)
+    if is_up; then echo "🟢 VPN включён"; else echo "🔴 VPN выключен"; fi
+    echo "Внешний IP: $(curl -s --max-time 5 https://api.ipify.org || echo недоступно)"
+    ;;
+  toggle|"")
+    if is_up; then
+      echo "⏹  Отключаю VPN ($IFACE)..."
+      "$SUDO" -n "$WG_QUICK" down "$IFACE"
+      echo "✅ VPN выключен"
+    else
+      echo "🚀 Включаю VPN ($IFACE)..."
+      "$SUDO" -n "$WG_QUICK" up "$IFACE"
+      echo "✅ VPN включён"
+    fi
+    ;;
+  *)
+    echo "Использование: vpn [toggle|on|off|status]" >&2
+    exit 2
+    ;;
+esac
